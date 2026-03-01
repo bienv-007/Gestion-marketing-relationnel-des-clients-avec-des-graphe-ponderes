@@ -7,6 +7,7 @@
     <title>Relations - MLM</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         body { background-color: #f8fafc; }
         
@@ -68,7 +69,21 @@
     </nav>
 </header>
 
-<main class="max-w-6xl mx-auto px-4 py-10 card-anim">
+<main x-data="{ 
+        showModal: false, 
+        relationToDelete: null,
+        rowToDelete: null,
+        confirmDelete() {
+            fetch('supprimer_relation.php?id=' + this.relationToDelete)
+                .then(response => {
+                    if(response.ok) {
+                        this.rowToDelete.isVisible = false;
+                        this.showModal = false;
+                    }
+                });
+        }
+    }" 
+    class="max-w-6xl mx-auto px-4 py-10 card-anim">
     <div class="mb-10">
         <h1 class="text-2xl font-bold text-gray-900">Gérer les Relations de Parrainage</h1>
         <p class="text-gray-500 text-sm mt-1">Établissez les liens hiérarchiques entre les membres de votre réseau.</p>
@@ -138,44 +153,61 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-50">
-                    <?php
-                    $sql = "SELECT r.id, c1.nom AS parrain, c2.nom AS filleul 
-                            FROM t_relations r 
-                            JOIN t_clients c1 ON r.parrain_id = c1.id 
-                            JOIN t_clients c2 ON r.filleuil_id = c2.id";
-                    $requete = $connexion->query($sql);
-                    while($rel = $requete->fetch()):
-                    ?>
-                    <tr class="hover:bg-indigo-50/40 transition-colors group">
-                        <td class="px-8 py-5">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-400">
-                                    <i data-lucide="user" class="w-4 h-4"></i>
-                                </div>
-                                <span class="text-sm font-semibold text-gray-700"><?= htmlspecialchars($rel['parrain']) ?></span>
-                            </div>
-                        </td>
-                        <td class="px-8 py-5 text-center">
-                            <div class="inline-flex items-center justify-center text-indigo-300 group-hover:text-indigo-600 transition-colors">
-                                <i data-lucide="arrow-right-circle" class="w-6 h-6"></i>
-                            </div>
-                        </td>
-                        <td class="px-8 py-5">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-sm">
-                                    <i data-lucide="user-check" class="w-4 h-4"></i>
-                                </div>
-                                <span class="text-sm font-semibold text-gray-700"><?= htmlspecialchars($rel['filleul']) ?></span>
-                            </div>
-                        </td>
-                        <td class="px-8 py-5 text-right">
-                            <button class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    <?php endwhile; ?>
-                </tbody>
+    <?php
+    $sql = "SELECT r.id, c1.nom AS parrain, c2.nom AS filleul 
+            FROM t_relations r 
+            JOIN t_clients c1 ON r.parrain_id = c1.id 
+            JOIN t_clients c2 ON r.filleuil_id = c2.id";
+    $requete = $connexion->query($sql);
+    while($rel = $requete->fetch()):
+    ?>
+    <tr x-data="{ isVisible: true }" 
+        x-show="isVisible" 
+        x-transition:leave="transition ease-in duration-300"
+        x-transition:leave-start="opacity-100 scale-100"
+        x-transition:leave-end="opacity-0 scale-95"
+        class="hover:bg-indigo-50/40 transition-colors group">
+        
+        <td class="px-8 py-5">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-400">
+                    <i data-lucide="user" class="w-4 h-4"></i>
+                </div>
+                <span class="text-sm font-semibold text-gray-700"><?= htmlspecialchars($rel['parrain']) ?></span>
+            </div>
+        </td>
+
+        <td class="px-8 py-5 text-center">
+            <div class="inline-flex items-center justify-center text-indigo-300 group-hover:text-indigo-600 transition-colors">
+                <i data-lucide="arrow-right-circle" class="w-6 h-6"></i>
+            </div>
+        </td>
+
+        <td class="px-8 py-5">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-sm">
+                    <i data-lucide="user-check" class="w-4 h-4"></i>
+                </div>
+                <span class="text-sm font-semibold text-gray-700"><?= htmlspecialchars($rel['filleul']) ?></span>
+            </div>
+        </td>
+
+        <td class="px-8 py-5 text-right">
+            <button 
+                @click="if(confirm('Supprimer cette relation ?')) {
+                    fetch('supprimer_relation.php?id=<?= $rel['id'] ?>')
+                    .then(response => {
+                        if(response.ok) isVisible = false;
+                    })
+                }"
+                class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+            >
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+        </td>
+    </tr>
+    <?php endwhile; ?>
+</tbody>
             </table>
         </div>
     </div>
