@@ -7,7 +7,9 @@
     <title>Achats - Gestion MLM</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style> [x-cloak] { display: none !important; }
+
         body {
              background-color: #f8fafc;
              }
@@ -29,7 +31,11 @@
         }
     </style>
 </head>
-<body>
+<body x-data="{ 
+    showEditModal: false, 
+    showDeleteModal: false,
+    currentAchat: {id: '', client_id: '', montant: '', date: ''}
+}">
 
 <?php $current_page = basename($_SERVER['PHP_SELF']); ?>
 <header class="bg-white border-b border-gray-100 sticky top-0 z-50 shadow-sm">
@@ -167,12 +173,20 @@
                             </span>
                         </td>
                         <td class="px-6 py-4">
-                            <div class="flex justify-center">
-                                <button class="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Supprimer">
-                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                </button>
-                            </div>
-                        </td>
+    <div class="flex justify-center gap-2">
+        <button 
+            @click="currentAchat = {id: '<?= $achat['id'] ?>', client_id: '<?= $achat['client_id'] ?>', montant: '<?= $achat['montant'] ?>', date: '<?= $achat['date_achat'] ?>'}; showEditModal = true"
+            class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="Modifier">
+            <i data-lucide="edit-3" class="w-4 h-4"></i>
+        </button>
+
+        <button 
+            @click="currentAchat = {id: '<?= $achat['id'] ?>'}; showDeleteModal = true"
+            class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Supprimer">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+        </button>
+    </div>
+</td>
                     </tr>
                     <?php endwhile; ?>
                 </tbody>
@@ -184,5 +198,67 @@
 <script>
     lucide.createIcons();
 </script>
+<div x-show="showEditModal" x-cloak class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div x-show="showEditModal" x-transition.opacity @click="showEditModal = false" class="absolute inset-0 bg-gray-900/40 backdrop-blur-md"></div>
+    
+    <div x-show="showEditModal" x-transition.scale.95 class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 relative z-10 border border-white/20">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="bg-indigo-100 text-indigo-600 p-2 rounded-xl">
+                <i data-lucide="edit-3" class="w-5 h-5"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900">Modifier la transaction</h3>
+        </div>
+        
+        <form action="traitement_achats.php" method="post" class="space-y-5">
+            <input type="hidden" name="action" value="update">
+            <input type="hidden" name="id" :value="currentAchat.id">
+            
+            <div>
+                <label class="text-xs font-bold text-gray-400 uppercase ml-1">Client</label>
+                <select name="client_id" x-model="currentAchat.client_id" class="w-full border border-gray-100 rounded-xl p-3 text-sm mt-1 bg-gray-50 outline-none focus:ring-2 focus:ring-indigo-500/20">
+                    <?php
+                        $req_c = $connexion->query("SELECT id, nom FROM t_clients ORDER BY nom");
+                        while($c = $req_c->fetch()) echo '<option value="'.$c['id'].'">'.$c['nom'].'</option>';
+                    ?>
+                </select>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase ml-1">Montant ($)</label>
+                    <input type="number" name="montant" x-model="currentAchat.montant" step="0.01" class="w-full border border-gray-100 rounded-xl p-3 text-sm mt-1 bg-gray-50 outline-none focus:ring-2 focus:ring-indigo-500/20">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase ml-1">Date</label>
+                    <input type="date" name="date_achat" x-model="currentAchat.date" class="w-full border border-gray-100 rounded-xl p-3 text-sm mt-1 bg-gray-50 outline-none focus:ring-2 focus:ring-indigo-500/20">
+                </div>
+            </div>
+
+            <div class="flex gap-3 pt-2">
+                <button type="button" @click="showEditModal = false" class="flex-1 px-4 py-3 text-gray-500 font-bold hover:bg-gray-50 rounded-2xl transition-all">Annuler</button>
+                <button type="submit" class="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all">Enregistrer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div x-show="showDeleteModal" x-cloak class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div x-show="showDeleteModal" x-transition.opacity @click="showDeleteModal = false" class="absolute inset-0 bg-gray-900/40 backdrop-blur-md"></div>
+    
+    <div x-show="showDeleteModal" x-transition.scale.95 class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8 text-center relative z-10">
+        <div class="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+            <i data-lucide="trash-2" class="w-10 h-10"></i>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-900 mb-2">Supprimer ?</h3>
+        <p class="text-gray-500 text-sm mb-8">Êtes-vous sûr de vouloir supprimer cette transaction ? Cette action est irréversible.</p>
+        
+        <form action="traitement_achats.php" method="post" class="flex gap-3">
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="id" :value="currentAchat.id">
+            <button type="button" @click="showDeleteModal = false" class="flex-1 px-4 py-3 text-gray-500 font-bold hover:bg-gray-50 rounded-2xl transition-all">Annuler</button>
+            <button type="submit" class="flex-1 px-4 py-3 bg-red-500 text-white rounded-2xl font-bold shadow-lg shadow-red-200 hover:bg-red-600 transition-all">Supprimer</button>
+        </form>
+    </div>
+</div>
 </body>
 </html>
