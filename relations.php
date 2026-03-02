@@ -9,6 +9,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
+        [x-cloak] { display: none !important; }
         body { background-color: #f8fafc; }
         
         .card-anim {
@@ -30,7 +31,10 @@
         }
     </style>
 </head>
-<body>
+<body x-data="{ 
+    showDeleteModal: false, 
+    relationId: null 
+}">
 
 <?php $current_page = basename($_SERVER['PHP_SELF']); ?>
 <header class="bg-white border-b border-gray-100 sticky top-0 z-50 shadow-sm">
@@ -69,21 +73,7 @@
     </nav>
 </header>
 
-<main x-data="{ 
-        showModal: false, 
-        relationToDelete: null,
-        rowToDelete: null,
-        confirmDelete() {
-            fetch('supprimer_relation.php?id=' + this.relationToDelete)
-                .then(response => {
-                    if(response.ok) {
-                        this.rowToDelete.isVisible = false;
-                        this.showModal = false;
-                    }
-                });
-        }
-    }" 
-    class="max-w-6xl mx-auto px-4 py-10 card-anim">
+<main class="max-w-6xl mx-auto px-4 py-10 card-anim">
     <div class="mb-10">
         <h1 class="text-2xl font-bold text-gray-900">Gérer les Relations de Parrainage</h1>
         <p class="text-gray-500 text-sm mt-1">Établissez les liens hiérarchiques entre les membres de votre réseau.</p>
@@ -193,18 +183,13 @@
         </td>
 
         <td class="px-8 py-5 text-right">
-            <button 
-                @click="if(confirm('Supprimer cette relation ?')) {
-                    fetch('supprimer_relation.php?id=<?= $rel['id'] ?>')
-                    .then(response => {
-                        if(response.ok) isVisible = false;
-                    })
-                }"
-                class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-            >
-                <i data-lucide="trash-2" class="w-4 h-4"></i>
-            </button>
-        </td>
+    <button 
+        @click="relationId = '<?= $rel['id'] ?>'; showDeleteModal = true"
+        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+        title="Supprimer la relation">
+        <i data-lucide="trash-2" class="w-4 h-4"></i>
+    </button>
+</td>
     </tr>
     <?php endwhile; ?>
 </tbody>
@@ -216,5 +201,54 @@
 <script>
     lucide.createIcons();
 </script>
+<div 
+    x-show="showDeleteModal" 
+    x-cloak 
+    class="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+>
+    <div 
+        x-show="showDeleteModal" 
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        @click="showDeleteModal = false" 
+        class="fixed inset-0 bg-gray-900/40 backdrop-blur-md"
+    ></div>
+
+    <div 
+        x-show="showDeleteModal" 
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 scale-95"
+        x-transition:enter-end="opacity-100 scale-100"
+        class="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm p-8 text-center relative z-[10000] border border-white/20"
+    >
+        <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i data-lucide="alert-circle" class="w-8 h-8"></i>
+        </div>
+
+        <h3 class="text-xl font-bold text-gray-900 mb-2">Rompre le lien ?</h3>
+        <p class="text-gray-500 text-sm mb-8 leading-relaxed">
+            Êtes-vous sûr de vouloir supprimer cette relation de parrainage ?<br>
+            <span class="text-red-500 font-medium">Cela pourrait modifier la structure du réseau.</span>
+        </p>
+        
+        <form action="traitement_relations.php" method="post" class="flex gap-3">
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="id" :value="relationId">
+            
+            <button type="button" @click="showDeleteModal = false" 
+                    class="flex-1 px-4 py-3 text-gray-500 font-bold hover:bg-gray-50 rounded-2xl transition-all">
+                Annuler
+            </button>
+            <button type="submit" 
+                    class="flex-1 px-4 py-3 bg-red-500 text-white rounded-2xl font-bold shadow-lg shadow-red-100 hover:bg-red-600 transition-all">
+                Confirmer
+            </button>
+        </form>
+    </div>
+</div>
 </body>
 </html>
