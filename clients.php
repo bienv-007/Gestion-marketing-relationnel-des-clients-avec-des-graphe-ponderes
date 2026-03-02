@@ -7,6 +7,7 @@
     <title>Gestion des Clients</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         body { background-color: #f8fafc; }
         
@@ -70,7 +71,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
     </nav>
 </header>
 
-<main class="max-w-6xl mx-auto px-4 py-10 page-entry">
+<main x-data="{ 
+    showEditModal: false, 
+    showDeleteModal: false, 
+    currentClient: { id: '', nom: '' } 
+}" class="max-w-6xl mx-auto px-4 py-10 page-entry">
     <div class="mb-10">
         <h1 class="text-2xl font-bold text-gray-900">Gérer les Clients</h1>
         <p class="text-gray-500 text-sm">Ajoutez, modifiez ou gérez les membres de votre réseau de parrainage.</p>
@@ -133,21 +138,74 @@ $current_page = basename($_SERVER['PHP_SELF']);
                             </div>
                         </td>
                         <td class="px-6 py-4">
-                            <div class="flex items-center justify-center gap-3">
-                                <button class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Modifier">
-                                    <i data-lucide="pencil" class="w-4 h-4"></i>
-                                </button>
-                                <button class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Supprimer">
-                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                </button>
-                            </div>
-                        </td>
+    <div class="flex items-center justify-center gap-3">
+        <button @click="currentClient = { id: '<?= $client['id'] ?>', nom: '<?= htmlspecialchars($client['nom'], ENT_QUOTES) ?>' }; showEditModal = true" 
+                class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="Modifier">
+            <i data-lucide="pencil" class="w-4 h-4"></i>
+        </button>
+        
+        <button @click="currentClient = { id: '<?= $client['id'] ?>', nom: '<?= htmlspecialchars($client['nom'], ENT_QUOTES) ?>' }; showDeleteModal = true" 
+                class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Supprimer">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+        </button>
+    </div>
+</td>
                     </tr>
                     <?php endwhile; ?>
                 </tbody>
             </table>
         </div>
     </div>
+    <div x-show="showEditModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div x-show="showEditModal" x-transition.opacity @click="showEditModal = false" class="absolute inset-0 bg-gray-900/40 backdrop-blur-md"></div>
+    
+    <div x-show="showEditModal" x-transition.scale.95 class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 relative z-10 border border-gray-100">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="bg-indigo-100 text-indigo-600 p-2 rounded-xl">
+                <i data-lucide="user-cog" class="w-5 h-5"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900">Modifier le membre</h3>
+        </div>
+        
+        <form action="traitement_client.php" method="post" class="space-y-5">
+            <input type="hidden" name="action" value="update">
+            <input type="hidden" name="id" :value="currentClient.id">
+            
+            <div class="space-y-2">
+                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Nom complet</label>
+                <input type="text" name="nom" x-model="currentClient.nom" 
+                       class="w-full border border-gray-200 rounded-2xl p-4 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-gray-50/50" required>
+            </div>
+
+            <div class="flex gap-3 pt-2">
+                <button type="button" @click="showEditModal = false" class="flex-1 px-4 py-3 text-gray-500 font-bold hover:bg-gray-50 rounded-2xl transition-all">Annuler</button>
+                <button type="submit" class="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all">Enregistrer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div x-show="showDeleteModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div x-show="showDeleteModal" x-transition.opacity @click="showDeleteModal = false" class="absolute inset-0 bg-gray-900/40 backdrop-blur-md"></div>
+    
+    <div x-show="showDeleteModal" x-transition.scale.95 class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8 text-center relative z-10">
+        <div class="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+            <i data-lucide="alert-circle" class="w-10 h-10"></i>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-900 mb-2">Supprimer ?</h3>
+        <p class="text-gray-500 text-sm mb-8">
+            Voulez-vous vraiment retirer <span class="font-bold text-gray-800" x-text="currentClient.nom"></span> ?<br>
+            <span class="text-red-400 text-xs">Cela pourrait affecter les liens de parrainage.</span>
+        </p>
+        
+        <form action="traitement_client.php" method="post" class="flex gap-3">
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="id" :value="currentClient.id">
+            <button type="button" @click="showDeleteModal = false" class="flex-1 px-4 py-3 text-gray-500 font-bold hover:bg-gray-50 rounded-2xl transition-all">Annuler</button>
+            <button type="submit" class="flex-1 px-4 py-3 bg-red-500 text-white rounded-2xl font-bold shadow-lg shadow-red-100 hover:bg-red-600 transition-all">Supprimer</button>
+        </form>
+    </div>
+</div>
 </main>
 
 <script>
