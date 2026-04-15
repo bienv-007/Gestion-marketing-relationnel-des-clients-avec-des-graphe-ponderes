@@ -175,11 +175,17 @@
                         <td class="px-6 py-4">
     <div class="flex justify-center gap-2">
         <button 
-            @click="currentAchat = {id: '<?= $achat['id'] ?>', client_id: '<?= $achat['client_id'] ?>', montant: '<?= $achat['montant'] ?>', date: '<?= $achat['date_achat'] ?>'}; showEditModal = true"
-            class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="Modifier">
-            <i data-lucide="edit-3" class="w-4 h-4"></i>
-        </button>
-
+    @click='currentAchat = <?= json_encode([
+        "id" => $achat["id"],
+        "client_id" => $achat["client_id"],
+        "montant" => $achat["montant"],
+        "date" => $achat["date_achat"]
+    ]) ?>; showEditModal = true'
+    class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+    title="Modifier">
+    
+    <i data-lucide="edit-3" class="w-4 h-4"></i>
+</button>
         <button 
             @click="currentAchat = {id: '<?= $achat['id'] ?>'}; showDeleteModal = true"
             class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Supprimer">
