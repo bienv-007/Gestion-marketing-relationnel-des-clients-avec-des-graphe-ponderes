@@ -4,3 +4,5 @@ le parrain touche 5% de commissions sur les achats de ses filleuls directes et 1
 sur ses filleuls indirectes donc les filleuls de ses filleuls
 l'application permet aussi d'ajouter des achats et de visualiser 
 le réseau des clients via un graphe pondéré
+
+technologies utilisees : PHP et MySQL
